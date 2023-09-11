@@ -1,6 +1,3 @@
-const properties = require("./json/properties.json");
-const users = require("./json/users.json");
-
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -10,7 +7,6 @@ const pool = new Pool({
   database: 'lightbnb'
 });
 
-
 /// Users
 
 /**
@@ -18,7 +14,7 @@ const pool = new Pool({
  * @param {String} email The email of the user.
  * @return {Promise<{}>} A promise to the user.
  */
-const getUserWithEmail = function (email) {
+const getUserWithEmail = function(email) {
   return pool.query('SELECT * FROM users WHERE email = $1', [email])
     .then((result) => {
       return result.rows[0]; // Assuming you expect a single user or null
@@ -27,7 +23,6 @@ const getUserWithEmail = function (email) {
       console.log(err.message);
       return null;
     });
-
 };
 
 /**
@@ -35,7 +30,7 @@ const getUserWithEmail = function (email) {
  * @param {string} id The id of the user.
  * @return {Promise<{}>} A promise to the user.
  */
-const getUserWithId = function (id) {
+const getUserWithId = function(id) {
   return pool.query('SELECT * FROM users WHERE id = $1', [id])
     .then((result) => {
       return result.rows[0]; // Assuming you expect a single user or null
@@ -51,7 +46,7 @@ const getUserWithId = function (id) {
  * @param {{name: string, password: string, email: string}} user
  * @return {Promise<{}>} A promise to the user.
  */
-const addUser = function (user) {
+const addUser = function(user) {
   return pool.query(
     'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *',
     [user.name, user.email, user.password]
@@ -72,7 +67,7 @@ const addUser = function (user) {
  * @param {string} guest_id The id of the user.
  * @return {Promise<[{}]>} A promise to the reservations.
  */
-const getAllReservations = function (guest_id, limit = 10) {
+const getAllReservations = function(guest_id, limit = 10) {
   const query = `
     SELECT properties.*, reservations.*
     FROM reservations
@@ -81,7 +76,6 @@ const getAllReservations = function (guest_id, limit = 10) {
     ORDER BY reservations.start_date
     LIMIT $2;
   `;
-
   return pool
     .query(query, [guest_id, limit])
     .then((result) => {
@@ -101,36 +95,33 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @param {*} limit The number of results to return.
  * @return {Promise<[{}]>}  A promise to the properties.
  */
-const getAllProperties = function (options, limit = 10) {
+const getAllProperties = function(options, limit = 10) {
   const queryParams = [];
   let queryString = `
     SELECT properties.*, AVG(property_reviews.rating) AS average_rating
     FROM properties
     LEFT JOIN property_reviews ON properties.id = property_id
   `;
-
   // Check if an owner_id is provided
   if (options.owner_id) {
     queryParams.push(options.owner_id);
     queryString += `WHERE properties.owner_id = $${queryParams.length} `;
   }
-
+  // Check if a  city is provided
   if (options.city) {
     queryParams.push(`%${options.city}%`);
-    queryString += `WHERE city LIKE $${queryParams.length} `;   
+    queryString += `WHERE city LIKE $${queryParams.length} `;
   }
-
   // Check if both minimum_price_per_night and maximum_price_per_night are provided
   if (options.minimum_price_per_night && options.maximum_price_per_night) {
     queryParams.push(options.minimum_price_per_night * 100); // Convert to cents
     queryParams.push(options.maximum_price_per_night * 100); // Convert to cents
     queryString += `AND properties.cost_per_night BETWEEN $${queryParams.length - 1} AND $${queryParams.length} `;
   }
-
   queryString += `
     GROUP BY properties.id
   `;
-
+  // Check if rating is provided
   if (options.minimum_rating) {
     queryParams.push(options.minimum_rating);
     queryString += `
@@ -142,9 +133,6 @@ const getAllProperties = function (options, limit = 10) {
     ORDER BY properties.cost_per_night    
     LIMIT $${queryParams.length};
   `;
-
-  console.log(queryString, queryParams);
-
   return pool.query(queryString, queryParams).then((res) => res.rows);
 };
 
@@ -154,7 +142,7 @@ const getAllProperties = function (options, limit = 10) {
  * @param {{}} property An object containing all of the property details.
  * @return {Promise<{}>} A promise to the property.
  */
-const addProperty = function (property) {
+const addProperty = function(property) {
   // Destructure the property object to extract its properties
   const {
     owner_id,
@@ -214,7 +202,7 @@ const addProperty = function (property) {
   return pool
     .query(query, values)
     .then((result) => {
-      return result.rows[0]; // Return the saved property
+      return result.rows[0]; 
     })
     .catch((err) => {
       console.error(err.message);
